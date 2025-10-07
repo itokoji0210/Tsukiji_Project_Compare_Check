@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>定点・ビフォーアフター比較（フェード＆スライダー）</title>
+<meta name="color-scheme" content="light dark" />
+<style>
+  /* --- 前回と同じスタイル --- */
+  :root {
+    --bg: #0f1115;
+    --fg: #e8eaf0;
+    --muted:#9aa3b2;
+    --accent:#4da3ff;
+    --card:#171a20;
+    --border:#2a2f3a;
+  }
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    line-height:1.6;
+    padding:16px;
+  }
+  .container{max-width:1000px;margin:auto}
+  h1{font-size:22px;margin-bottom:10px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+  select,button,input[type=range]{background:#0c0f14;color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+  button{cursor:pointer}
+  .viewer{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;border:1px solid var(--border)}
+  .layer{position:absolute;inset:0}
+  .layer img{width:100%;height:100%;object-fit:contain;transition:opacity .5s ease}
+  .divider{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:50%}
+  .handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4)}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>定点撮影｜ビフォー・アフター比較</h1>
+
+<div class="card">
+  <label>左（古い）</label>
+  <select id="leftSelect"></select>
+  <label>右（新しい）</label>
+  <select id="rightSelect"></select>
+  <button id="modeBtn">モード：フェード</button>
+  <button id="toggleBtn">古い↔新しい</button>
+  <input id="range" type="range" min="0" max="100" value="50" style="display:none;width:100%">
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="layer" id="layerA"><img id="imgA"></div>
+  <div class="layer" id="layerB"><img id="imgB"></div>
+  <div class="divider" id="divider" style="display:none"></div>
+  <div class="handle" id="handle" style="display:none"></div>
+</div>
+</div>
+
+<script>
+/* ===================== ここだけ編集すればOK ===================== */
+const IMAGES = [
+  "2025_08_04.jpg",
+  "2025_08_20.JPG", // ★ 追加した新しい写真
+  "2025_10_07.jpg"
+];
+const DEFAULT_LEFT  = "2025_08_04.jpg";
+const DEFAULT_RIGHT = "2025_10_07.jpg";
+/* ================================================================ */
+
+const leftSelect=document.getElementById("leftSelect");
+const rightSelect=document.getElementById("rightSelect");
+const imgA=document.getElementById("imgA");
+const imgB=document.getElementById("imgB");
+const modeBtn=document.getElementById("modeBtn");
+const toggleBtn=document.getElementById("toggleBtn");
+const range=document.getElementById("range");
+const divider=document.getElementById("divider");
+const handle=document.getElementById("handle");
+const viewer=document.getElementById("viewer");
+let mode="fade";
+let showing="left";
+
+function populate(){
+  [leftSelect,rightSelect].forEach(sel=>{
+    sel.innerHTML="";
+    IMAGES.forEach(fn=>{
+      const o=document.createElement("option");
+      o.value=fn;o.textContent=fn;o.textContent=fn.replace(".jpg","").replace(".JPG","");
+      sel.appendChild(o);
+    });
+  });
+  leftSelect.value=DEFAULT_LEFT;
+  rightSelect.value=DEFAULT_RIGHT;
+  loadImages();
+}
+function loadImages(){
+  imgA.src=leftSelect.value;
+  imgB.src=rightSelect.value;
+  imgA.style.opacity=1;
+  imgB.style.opacity=0;
+}
+function toggleFade(){
+  showing=(showing==="left")?"right":"left";
+  imgB.style.opacity=(showing==="left")?0:1;
+}
+function setMode(next){
+  mode=next;
+  if(mode==="fade"){
+    modeBtn.textContent="モード：フェード";
+    toggleBtn.style.display="";
+    range.style.display="none";
+    divider.style.display="none";
+    handle.style.display="none";
+    imgA.style.clipPath="";
+    imgB.style.clipPath="";
+  }else{
+    modeBtn.textContent="モード：スライダー";
+    toggleBtn.style.display="none";
+    range.style.display="";
+    divider.style.display="";
+    handle.style.display="";
+    setSlider(range.value);
+  }
+}
+function setSlider(v){
+  const p=Math.max(0,Math.min(100,Number(v)));
+  imgB.style.opacity=1;
+  imgB.style.clipPath=`inset(0 ${100-p}% 0 0)`;
+  divider.style.left=p+"%";
+  handle.style.left=p+"%";
+}
+leftSelect.addEventListener("change",loadImages);
+rightSelect.addEventListener("change",loadImages);
+toggleBtn.addEventListener("click",toggleFade);
+modeBtn.addEventListener("click",()=>setMode(mode==="fade"?"slider":"fade"));
+range.addEventListener("input",e=>setSlider(e.target.value));
+populate();
+</script>
+</body>
+</html>
